@@ -1,0 +1,35 @@
+---
+haproxy:
+    type: front
+
+varnish:
+    links:
+        - haproxy
+
+serviceA:
+    type: application
+    links:
+        - db
+        - varnish
+        - redis
+        - carbon
+
+serviceB:
+    type: application
+    links:
+        - haproxy
+        - carbon
+
+worker:
+    type: application
+    links:
+        - redis
+        - db
+        - carbon
+
+carbon:
+    type: perf
+
+redis: null
+
+db: null
