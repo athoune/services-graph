@@ -1,7 +1,7 @@
 Service-graph
 =============
 
-Manage your architecture as a graph.
+Manage your network architecture as a graph.
 
 Licence
 -------
