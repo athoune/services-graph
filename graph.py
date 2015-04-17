@@ -3,7 +3,6 @@
 import networkx as nx
 import yaml
 import matplotlib.pyplot as plt
-from matplotlib.text import Annotation, Text
 
 
 class Service(object):
@@ -28,14 +27,9 @@ class Compose(object):
 
     def graph(self):
         g = nx.DiGraph()
-        #nodes = self.services.values()
-        #g.add_nodes_from(nodes)
         for node in self.services.values():
             for link in node.links:
                 g.add_edge(self.services[link], node)
-        #for service in self.services.values():
-            #for link in service.links:
-                #g.add_edge(link, dict(name=service.name, type=service.type))
         return g
 
 
@@ -45,11 +39,7 @@ if __name__ == "__main__":
     compose = Compose(open(sys.argv[1], 'r'))
     G = compose.graph()
 
-    #d = json_graph.node_link_data(G)
-    #print d
-
     pos = nx.circular_layout(G)
-    print pos
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
