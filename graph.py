@@ -3,6 +3,7 @@
 import networkx as nx
 import yaml
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class Service(object):
@@ -41,18 +42,21 @@ if __name__ == "__main__":
 
     pos = nx.circular_layout(G)
 
+    sns.set()
+    palette = sns.color_palette()
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     nodes = G.nodes()
 
     def color(node):
         if node.type == 'front':
-            return 'yellow'
+            return 0
         if node.type == 'perf':
-            return 'blue'
+            return 1
         if node.type == 'application':
-            return 'green'
-        return 'red'
+            return 2
+        return 3
 
     def size(node):
         if node.type == 'application':
@@ -61,7 +65,7 @@ if __name__ == "__main__":
 
     nx.draw(G, pos=pos,
             node_size=[size(a) for a in pos.keys()],
-            node_color=[color(a) for a in pos.keys()])
+            node_color=[palette[color(a)] for a in pos.keys()])
     for node, po in pos.items():
         ax.annotate(None, po, backgroundcolor='white', alpha=0.5)
         ax.annotate(node.name, po, color='black')
