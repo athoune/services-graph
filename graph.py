@@ -14,10 +14,14 @@ class Service(object):
         self.links = [a.split(':')[0] for a in conf.get('links', [])]
         self.type = conf.get('type', 'service')
 
+    def __repr__(self):
+        return "<%s>" % self.name
+
 
 class Compose(object):
 
     def __init__(self, conf):
+        self._g = None
         self.conf = yaml.load(conf)
         self.services = {}
         for service, value in self.conf.items():
@@ -27,11 +31,26 @@ class Compose(object):
                 self.services[service] = Service(service, value)
 
     def graph(self):
-        g = nx.DiGraph()
-        for node in self.services.values():
-            for link in node.links:
-                g.add_edge(self.services[link], node)
-        return g
+        if self._g is None:
+            self._g = nx.DiGraph()
+            for node in self.services.values():
+                for link in node.links:
+                    self._g.add_edge(self.services[link], node)
+        return self._g
+
+    def filter(self, **args):
+        t, value = args.items()[0]
+        return (node for node in self.graph() if
+                getattr(node, t) == 'application')
+
+
+def ancestors(digraph, node, bag=None):
+    if bag is None:
+        bag = set()
+    for a in digraph.predecessors(node):
+        bag.add(a)
+        ancestors(digraph, a, bag)
+    return bag
 
 
 if __name__ == "__main__":
@@ -69,5 +88,9 @@ if __name__ == "__main__":
     for node, po in pos.items():
         ax.annotate(None, po, backgroundcolor='white', alpha=0.5)
         ax.annotate(node.name, po, color='black')
+
+    apps = compose.filter(type='application')
+    for app in apps:
+        print app, ancestors(G, app)
 
     plt.show()
