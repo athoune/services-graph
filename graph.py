@@ -41,7 +41,17 @@ class Compose(object):
     def filter(self, **args):
         t, value = args.items()[0]
         return (node for node in self.graph() if
-                getattr(node, t) == 'application')
+                getattr(node, t) == value)
+
+    def by_application(self, *args):
+        if len(args) == 0:
+            return self.graph()
+        apps = self.filter(type='application')
+        nodes = set()
+        for app in [a for a in apps if a.name in args]:
+            n = ancestors(self.graph(), app)
+            nodes |= n
+        return nodes
 
 
 def ancestors(digraph, node, bag=None):
@@ -92,5 +102,9 @@ if __name__ == "__main__":
     apps = compose.filter(type='application')
     for app in apps:
         print app, ancestors(G, app)
+
+    print 'serviceA', compose.by_application('serviceA')
+    print 'serviceB', compose.by_application('serviceB')
+    print 'serviceB + worker', compose.by_application('serviceB', 'worker')
 
     plt.show()
