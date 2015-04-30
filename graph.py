@@ -7,6 +7,7 @@ import seaborn as sns
 
 
 class Service(object):
+    "Service abstraction"
 
     def __init__(self, name, conf):
         self.name = name
@@ -19,16 +20,32 @@ class Service(object):
 
 
 class Compose(object):
+    "Group of Services"
 
     def __init__(self, conf):
         self._g = None
-        self.conf = yaml.load(conf)
+        if type(conf) == dict:
+            self.services = conf
+            return
+        conf = yaml.load(conf)
         self.services = {}
-        for service, value in self.conf.items():
+        for service, value in conf.items():
             if value is None:
                 self.services[service] = Service(service, {})
             else:
                 self.services[service] = Service(service, value)
+
+    def __iter__(self):
+        return self.services.itervalues()
+
+    def __repr__(self):
+        return "<Compose [%s]>" % ", ".join((repr(a) for a in
+                                             self.services.values()))
+
+    def __or__(self, other):
+        s = self.services
+        s.update(other.services)
+        return Compose(s)
 
     def graph(self):
         if self._g is None:
@@ -38,28 +55,18 @@ class Compose(object):
                     self._g.add_edge(self.services[link], node)
         return self._g
 
-    def filter(self, **args):
-        t, value = args.items()[0]
-        return (node for node in self.graph() if
-                getattr(node, t) == value)
-
-    def by_application(self, *args):
-        if len(args) == 0:
-            return self.graph()
-        apps = self.filter(type='application')
-        nodes = set()
-        for app in [a for a in apps if a.name in args]:
-            n = ancestors(self.graph(), app)
-            nodes |= n
-        return nodes
+    def filter(self, f):
+        return Compose(dict(((k, v) for (k, v) in self.services.iteritems()
+                             if f(k, v))))
 
 
-def ancestors(digraph, node, bag=None):
+def ancestors(digraph, nodes, bag=None):
     if bag is None:
         bag = set()
-    for a in digraph.predecessors(node):
-        bag.add(a)
-        ancestors(digraph, a, bag)
+    for node in nodes:
+        a = digraph.predecessors(node)
+        bag |= set(a)
+        bag |= ancestors(digraph, a, bag)
     return bag
 
 
@@ -99,12 +106,18 @@ if __name__ == "__main__":
         ax.annotate(None, po, backgroundcolor='white', alpha=0.5)
         ax.annotate(node.name, po, color='black')
 
-    apps = compose.filter(type='application')
+    apps = compose.filter(lambda k, v: v.type == 'application')
     for app in apps:
-        print app, ancestors(G, app)
+        print app, ancestors(G, [app])
+    perfs = compose.filter(lambda k, v: v.type == 'perf')
+    print "apps and perfs", apps | perfs
 
-    print 'serviceA', compose.by_application('serviceA')
-    print 'serviceB', compose.by_application('serviceB')
-    print 'serviceB + worker', compose.by_application('serviceB', 'worker')
+    sA = compose.filter(lambda k, v: k == 'serviceA')
+    sB = compose.filter(lambda k, v: k == 'serviceB')
+    print 'serviceA', ancestors(G, sA)
+    print 'serviceB', ancestors(G, sB)
+    sBw = compose.filter(lambda k, v: k in
+                         ('serviceB', 'worker'))
+    print 'serviceB + worker', ancestors(G, sBw)
 
-    plt.show()
+    #plt.show()
