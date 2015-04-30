@@ -57,7 +57,7 @@ class Compose(object):
 
     def filter(self, f):
         return Compose(dict(((k, v) for (k, v) in self.services.iteritems()
-                             if f(k, v))))
+                             if f(v))))
 
 
 def ancestors(digraph, nodes, bag=None):
@@ -106,17 +106,17 @@ if __name__ == "__main__":
         ax.annotate(None, po, backgroundcolor='white', alpha=0.5)
         ax.annotate(node.name, po, color='black')
 
-    apps = compose.filter(lambda k, v: v.type == 'application')
+    apps = compose.filter(lambda v: v.type == 'application')
     for app in apps:
         print app, ancestors(G, [app])
-    perfs = compose.filter(lambda k, v: v.type == 'perf')
+    perfs = compose.filter(lambda v: v.type == 'perf')
     print "apps and perfs", apps | perfs
 
-    sA = compose.filter(lambda k, v: k == 'serviceA')
-    sB = compose.filter(lambda k, v: k == 'serviceB')
+    sA = compose.filter(lambda v: v.name == 'serviceA')
+    sB = compose.filter(lambda v: v.name == 'serviceB')
     print 'serviceA', ancestors(G, sA)
     print 'serviceB', ancestors(G, sB)
-    sBw = compose.filter(lambda k, v: k in
+    sBw = compose.filter(lambda v: v.name in
                          ('serviceB', 'worker'))
     print 'serviceB + worker', ancestors(G, sBw)
 
